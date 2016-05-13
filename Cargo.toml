@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Kevin Balz <kevin.balz@web.de>"]
 
 [dependencies]
+libc = "*"
+lua52-sys = "*"
