@@ -39,3 +39,24 @@ impl State {
         return State { context: Rc::new(context) };
     }
 }
+
+#[derive(Debug,Clone,PartialEq)]
+pub enum LuaValue {
+    LuaBoolean(bool),
+    LuaNumber(f64),
+    LuaString(String),
+}
+
+impl LuaValue {
+    pub fn from_bool(b: bool) -> Self {
+        LuaValue::LuaBoolean(b)
+    }
+
+    pub fn from_number<N: Into<f64>>(number: N) -> Self {
+        LuaValue::LuaNumber(number.into())
+    }
+
+    pub fn from_string<S: Into<String>>(s: S) -> Self {
+        LuaValue::LuaString(s.into())
+    }
+}
