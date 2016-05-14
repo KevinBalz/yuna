@@ -2,6 +2,7 @@ extern crate yuna;
 extern crate lua52_sys as ffi;
 
 use yuna::{LuaRead,LuaWrite};
+use std::ffi::{CString, CStr};
 
 #[test]
 fn read_bool() {
@@ -16,6 +17,18 @@ fn read_bool() {
 
     let f : Result<bool,()> = LuaRead::lua_read_index(&context, -1);
     assert_eq!(f,Ok(false));
+}
+
+#[test]
+fn read_string() {
+    let context = yuna::LuaContext::new();
+    let teststr = "LuaRocks";
+    let cstring = CString::new(teststr).unwrap();
+
+    unsafe { ffi::lua_pushstring(context.l,cstring.as_ptr()) };
+
+    let s : Result<String,_> = LuaRead::lua_read_index(&context, -1);
+    assert_eq!(s,Ok(String::from(teststr)));
 }
 
 #[test]
@@ -77,6 +90,17 @@ fn write_bool() {
     unsafe { LuaWrite::lua_write(&context, true) };
     let t : bool = LuaRead::lua_read_index(&context,-1).unwrap();
     assert_eq!(t,true);
+}
+
+#[test]
+fn write_str() {
+    let context = yuna::LuaContext::new();
+    let teststr = "LuaRocks";
+
+    unsafe { LuaWrite::lua_write(&context, teststr) };
+    let s : String = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(s,String::from(teststr));
+
 }
 
 #[test]

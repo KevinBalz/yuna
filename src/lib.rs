@@ -83,6 +83,21 @@ impl LuaWrite for bool {
     }
 }
 
+impl LuaRead for String {
+    fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()> {
+        let cstr = unsafe { ffi::lua_tostring(context.l,index) };
+        let s = unsafe { std::ffi::CStr::from_ptr(cstr).to_string_lossy().into_owned() };
+        Ok(s)
+    }
+}
+
+impl<'s> LuaWrite for &'s str {
+    unsafe fn lua_write(context: &LuaContext,value: Self) {
+        let cstr = std::ffi::CString::new(value).unwrap();;
+        ffi::lua_pushstring(context.l,cstr.as_ptr());
+    }
+}
+
 macro_rules! impl_integer(
     ($t:ident) => (
         impl LuaRead for $t {
