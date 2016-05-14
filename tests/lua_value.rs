@@ -1,6 +1,7 @@
 extern crate yuna;
+extern crate lua52_sys as ffi;
 
-use yuna::LuaValue;
+use yuna::{LuaValue, LuaContext,LuaRead,LuaWrite};
 
 #[test]
 fn create_luavalue_from_number_float() {
@@ -51,4 +52,26 @@ fn create_luavalue_from_string() {
     let valuefromstr = LuaValue::from_string(teststr);
 
     assert_eq!(LuaValue::LuaString(String::from(teststr)),valuefromstr);
+}
+
+#[test]
+fn read_luavalue() {
+    let context = LuaContext::new();
+    let teststr = "LuaRocks";
+
+    unsafe { ffi::lua_pushnil(context.l) };
+    let valnil : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(valnil,LuaValue::Nil);
+
+    unsafe { LuaWrite::lua_write(&context, true) };
+    let valb : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(valb,LuaValue::LuaBoolean(true));
+
+    unsafe { LuaWrite::lua_write(&context, teststr) };
+    let vals : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(vals,LuaValue::LuaString(String::from(teststr)));
+
+    unsafe { LuaWrite::lua_write(&context, 68.3) };
+    let valn : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(valn,LuaValue::LuaNumber(68.3));
 }

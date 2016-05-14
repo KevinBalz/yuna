@@ -45,6 +45,7 @@ pub enum LuaValue {
     LuaBoolean(bool),
     LuaNumber(f64),
     LuaString(String),
+    Nil
 }
 
 impl LuaValue {
@@ -58,6 +59,22 @@ impl LuaValue {
 
     pub fn from_string<S: Into<String>>(s: S) -> Self {
         LuaValue::LuaString(s.into())
+    }
+}
+
+impl LuaRead for LuaValue {
+    fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()> {
+        let tp = unsafe { ffi::lua_type(context.l,index) };
+        Ok(match tp {
+            ffi::LUA_TBOOLEAN  => LuaValue::LuaBoolean(LuaRead::lua_read_index(context,index).unwrap()),
+            ffi::LUA_TNUMBER   => LuaValue::LuaNumber(LuaRead::lua_read_index(context,index).unwrap()),
+            ffi::LUA_TSTRING   => LuaValue::LuaString(LuaRead::lua_read_index(context,index).unwrap()),
+            ffi::LUA_TTABLE    => unimplemented!(),
+            ffi::LUA_TFUNCTION => unimplemented!(),
+            ffi::LUA_TUSERDATA => unimplemented!(),
+            ffi::LUA_TNIL      => LuaValue::Nil,
+            i => panic!("Unknown lua type \"{}\"",i)
+        })
     }
 }
 
