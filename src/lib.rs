@@ -40,6 +40,30 @@ impl State {
     }
 }
 
+impl LuaIndex for State {
+    fn read<K: LuaWrite,V: LuaRead>(&self,key: K) -> Result<V,()> {
+        let result;
+        unsafe {
+            ffi::lua_pushglobaltable(self.context.l);
+            LuaWrite::lua_write(&self.context,key);
+            ffi::lua_gettable(self.context.l,-2);
+            result = LuaRead::lua_read_index(&self.context,-1);
+            ffi::lua_pop(self.context.l,2);
+        }
+        result
+    }
+
+    fn set<K: LuaWrite,V: LuaWrite>(&mut self,key: K,value: V) {
+        unsafe {
+            ffi::lua_pushglobaltable(self.context.l);
+            LuaWrite::lua_write(&self.context,key);
+            LuaWrite::lua_write(&self.context,value);
+            ffi::lua_settable(self.context.l,-3);
+            ffi::lua_pop(self.context.l,1);
+        }
+    }
+}
+
 #[derive(Debug,Clone,PartialEq)]
 pub enum LuaValue {
     LuaBoolean(bool),
@@ -188,3 +212,13 @@ macro_rules! impl_float(
 
 impl_float!(f32);
 impl_float!(f64);
+
+
+pub trait LuaIndex {
+    fn read<K: LuaWrite,V: LuaRead>(&self,key: K) -> Result<V,()>;
+    fn set<K: LuaWrite,V: LuaWrite>(&mut self,key: K,value: V);
+
+    fn get<K: LuaWrite>(&self,key: K) -> LuaValue {
+        self.read(key).unwrap()
+    }
+}
