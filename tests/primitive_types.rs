@@ -1,7 +1,7 @@
 extern crate yuna;
 extern crate lua52_sys as ffi;
 
-use yuna::LuaRead;
+use yuna::{LuaRead,LuaWrite};
 
 #[test]
 fn read_bool() {
@@ -63,5 +63,76 @@ fn read_float() {
 
     let b : Result<f64,()> = LuaRead::lua_read_index(&context, -1);
     assert_eq!(b,Ok(38.342));
+
+}
+
+#[test]
+fn write_bool() {
+    let context = yuna::LuaContext::new();
+
+    unsafe { LuaWrite::lua_write(&context, false) };
+    let f : bool = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(f,false);
+
+    unsafe { LuaWrite::lua_write(&context, true) };
+    let t : bool = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(t,true);
+}
+
+#[test]
+fn write_integers() {
+    let context = yuna::LuaContext::new();
+    let a: i8 = -84;
+    let b: i16 = 731;
+    let c: i32 = -842;
+
+    unsafe { LuaWrite::lua_write(&context, a) };
+    let ar : i8 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(ar,a);
+
+    unsafe { LuaWrite::lua_write(&context, b) };
+    let br : i16 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(br,b);
+
+    unsafe { LuaWrite::lua_write(&context, c) };
+    let cr : i32 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(cr,c);
+
+}
+
+#[test]
+fn write_unsigned() {
+    let context = yuna::LuaContext::new();
+    let a: u8 = 84;
+    let b: u16 = 731;
+    let c: u32 = 842;
+
+    unsafe { LuaWrite::lua_write(&context, a) };
+    let ar : u8 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(ar,a);
+
+    unsafe { LuaWrite::lua_write(&context, b) };
+    let br : u16 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(br,b);
+
+    unsafe { LuaWrite::lua_write(&context, c) };
+    let cr : u32 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(cr,c);
+
+}
+
+#[test]
+fn write_float() {
+    let context = yuna::LuaContext::new();
+    let a: f32 = 192.32;
+    let b: f64 = 100123.123;
+
+    unsafe { LuaWrite::lua_write(&context, a) };
+    let ar : f32 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(ar,a);
+
+    unsafe { LuaWrite::lua_write(&context, b) };
+    let br : f64 = LuaRead::lua_read_index(&context, -1).unwrap();
+    assert_eq!(br,b);
 
 }
