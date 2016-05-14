@@ -3,25 +3,39 @@ extern crate lua52_sys as ffi;
 
 mod lauxlib;
 
-pub struct State {
-    l: *mut ffi::lua_State
+use std::rc::Rc;
+
+pub struct LuaContext {
+    l: *mut ffi::lua_State,
 }
 
-impl State {
-
+impl LuaContext {
     pub fn new() -> Self {
-        let statep;
-        unsafe {
-            statep = lauxlib::luaL_newstate();
-            ffi::luaL_openlibs(statep);
-        }
-
-        return State {l: statep};
+        let l = unsafe { lauxlib::luaL_newstate() };
+        LuaContext { l: l }
     }
 }
 
-impl Drop for State {
+impl Drop for LuaContext {
     fn drop(&mut self) {
-        unsafe { ffi::lua_close(self.l); }
+        unsafe {
+            ffi::lua_close(self.l);
+        }
+    }
+}
+
+
+pub struct State {
+    context: Rc<LuaContext>,
+}
+
+impl State {
+    pub fn new() -> Self {
+        let context = LuaContext::new();
+        unsafe {
+            ffi::luaL_openlibs(context.l);
+        }
+
+        return State { context: Rc::new(context) };
     }
 }
