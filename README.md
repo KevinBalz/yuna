@@ -1,4 +1,4 @@
-# yuna
+# yuna [![Build Status](https://travis-ci.org/KevinBalz/yuna.svg?branch=master)](https://travis-ci.org/KevinBalz/yuna)
 
 A highlevel rust lua bridge
 
