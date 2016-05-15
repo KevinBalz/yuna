@@ -75,3 +75,25 @@ fn read_luavalue() {
     let valn : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
     assert_eq!(valn,LuaValue::LuaNumber(68.3));
 }
+
+#[test]
+fn write_luavalue() {
+    let context = LuaContext::new();
+
+    unsafe { LuaWrite::lua_write(&context,LuaValue::Nil) };
+    let nilread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(LuaValue::Nil,nilread);
+
+    unsafe { LuaWrite::lua_write(&context,LuaValue::LuaBoolean(false)) };
+    let boolread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(LuaValue::LuaBoolean(false),boolread);
+
+    unsafe { LuaWrite::lua_write(&context,LuaValue::LuaNumber(22.43)) };
+    let numread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(LuaValue::LuaNumber(22.43),numread);
+
+    let strval = LuaValue::LuaString(String::from("LuaRocks"));
+    unsafe { LuaWrite::lua_write(&context,strval.clone()) };
+    let strread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(strval,strread);
+}

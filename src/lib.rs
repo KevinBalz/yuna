@@ -102,6 +102,17 @@ impl LuaRead for LuaValue {
     }
 }
 
+impl LuaWrite for LuaValue {
+    unsafe fn lua_write(context: &LuaContext,value: Self) {
+        match value {
+            LuaValue::LuaBoolean(b) => LuaWrite::lua_write(context,b),
+            LuaValue::LuaNumber(n)  => LuaWrite::lua_write(context,n),
+            LuaValue::LuaString(st) => LuaWrite::lua_write(context,st.as_str()),
+            LuaValue::Nil           => ffi::lua_pushnil(context.l),
+        }
+    }
+}
+
 pub trait LuaRead: Sized {
     fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()>;
 }
