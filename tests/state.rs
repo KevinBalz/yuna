@@ -20,3 +20,15 @@ fn lua_index_state() {
     let getanswer = state.get("answer");
     assert_eq!(getanswer,yuna::LuaValue::LuaNumber(42.0));
 }
+
+#[test]
+fn state_do_string() {
+    let num : i32 = 86;
+    let mut state = yuna::State::new();
+
+    state.do_string(format!("num = {}",num));
+
+    let r = state.read("num").unwrap();
+
+    assert_eq!(num,r);
+}

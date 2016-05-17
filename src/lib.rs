@@ -38,6 +38,14 @@ impl State {
 
         return State { context: Rc::new(context) };
     }
+
+    pub fn do_string<S: AsRef<str>>(&self,code: S) {
+        let cstr = std::ffi::CString::new(code.as_ref()).unwrap().as_ptr();
+        unsafe {
+            lauxlib::luaL_dostring(self.context.l,cstr);
+        }
+    }
+
 }
 
 impl LuaIndex for State {
