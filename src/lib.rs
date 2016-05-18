@@ -3,30 +3,41 @@ extern crate lua52_sys as ffi;
 
 mod lauxlib;
 
-use std::rc::Rc;
+use std::cell::Cell;
 
 pub struct LuaContext {
     pub l: *mut ffi::lua_State,
+    refcount: Cell<usize>
 }
 
 impl LuaContext {
     pub fn new() -> Self {
         let l = unsafe { lauxlib::luaL_newstate() };
-        LuaContext { l: l }
+        let refcount = Cell::new(1);
+        LuaContext { l: l, refcount: refcount }
+    }
+}
+
+impl Clone for LuaContext {
+    fn clone(&self) -> Self {
+        let refcount = self.refcount.clone();
+        refcount.set(refcount.get() + 1);
+        LuaContext { l: self.l, refcount: refcount }
     }
 }
 
 impl Drop for LuaContext {
     fn drop(&mut self) {
-        unsafe {
-            ffi::lua_close(self.l);
+        self.refcount.set(self.refcount.get() - 1);
+        if self.refcount.get() == 0 {
+            unsafe { ffi::lua_close(self.l); }
         }
     }
 }
 
 
 pub struct State {
-    context: Rc<LuaContext>,
+    context: LuaContext,
 }
 
 impl State {
@@ -36,7 +47,7 @@ impl State {
             ffi::luaL_openlibs(context.l);
         }
 
-        return State { context: Rc::new(context) };
+        return State { context: context };
     }
 
     pub fn do_string<S: AsRef<str>>(&self,code: S) {
