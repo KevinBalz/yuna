@@ -83,6 +83,36 @@ impl LuaIndex for State {
     }
 }
 
+pub struct Table {
+    context: LuaContext,
+    refindex: libc::c_int,
+}
+
+impl LuaRead for Table {
+    fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()> {
+        let refindex = unsafe {
+            ffi::lua_pushvalue(context.l, index);
+            lauxlib::luaL_ref(context.l,ffi::LUA_REGISTRYINDEX)
+        };
+        Ok(Table { context: context.clone(), refindex: refindex })
+    }
+}
+
+impl LuaWrite for Table {
+    unsafe fn lua_write(context: &LuaContext,value: Self) {
+        ffi::lua_rawgeti(context.l, ffi::LUA_REGISTRYINDEX, value.refindex);
+    }
+}
+
+impl Table {
+    pub fn new(context: &LuaContext) -> Self {
+        unsafe { ffi::lua_newtable(context.l) };
+        let t = LuaRead::lua_read_index(context,-1).unwrap();
+        unsafe { ffi::lua_pop(context.l,1) };
+        t
+    }
+}
+
 #[derive(Debug,Clone,PartialEq)]
 pub enum LuaValue {
     LuaBoolean(bool),
