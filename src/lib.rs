@@ -83,25 +83,48 @@ impl LuaIndex for State {
     }
 }
 
+pub trait LuaRef : Sized {
+    fn get_context(&self) -> &LuaContext;
+    fn get_refindex(&self) -> libc::c_int;
+
+    unsafe fn from_refindex(context: &LuaContext,refindex: libc::c_int) -> Self;
+
+    unsafe fn ref_from_stack(context: &LuaContext) -> Self {
+        let refindex = lauxlib::luaL_ref(context.l,ffi::LUA_REGISTRYINDEX);
+        Self::from_refindex(context,refindex)
+    }
+
+    unsafe fn push_reference(context: &LuaContext,refid: libc::c_int) {
+        ffi::lua_rawgeti(context.l, ffi::LUA_REGISTRYINDEX, refid);
+    }
+
+    unsafe fn write_self(&self) {
+        Self::push_reference(self.get_context(),self.get_refindex());
+    }
+}
+
+impl<T: LuaRef> LuaRead for T {
+    fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()> {
+        let value = unsafe {
+            ffi::lua_pushvalue(context.l, index);
+            LuaRef::ref_from_stack(context)
+        };
+
+        Ok(value)
+    }
+}
+
+
+impl<'a,T: LuaRef> LuaWrite for &'a T {
+    unsafe fn lua_write(context: &LuaContext,value: Self) {
+        T::push_reference(context,value.get_refindex());
+    }
+}
+
+
 pub struct Table {
     context: LuaContext,
     refindex: libc::c_int,
-}
-
-impl LuaRead for Table {
-    fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()> {
-        let refindex = unsafe {
-            ffi::lua_pushvalue(context.l, index);
-            lauxlib::luaL_ref(context.l,ffi::LUA_REGISTRYINDEX)
-        };
-        Ok(Table { context: context.clone(), refindex: refindex })
-    }
-}
-
-impl LuaWrite for Table {
-    unsafe fn lua_write(context: &LuaContext,value: Self) {
-        ffi::lua_rawgeti(context.l, ffi::LUA_REGISTRYINDEX, value.refindex);
-    }
 }
 
 impl Table {
@@ -112,6 +135,46 @@ impl Table {
         t
     }
 }
+
+impl LuaRef for Table {
+    fn get_context(&self) -> &LuaContext {
+        &self.context
+    }
+
+    fn get_refindex(&self) -> libc::c_int {
+        self.refindex
+    }
+
+    unsafe fn from_refindex(context: &LuaContext,refindex: libc::c_int) -> Self {
+        Table {context: context.clone(), refindex: refindex }
+    }
+}
+
+
+impl LuaIndex for Table {
+    fn read<K: LuaWrite,V: LuaRead>(&self,key: K) -> Result<V,()> {
+        let result;
+        unsafe {
+            LuaWrite::lua_write(&self.context,self);
+            LuaWrite::lua_write(&self.context,key);
+            ffi::lua_gettable(self.context.l,-2);
+            result = LuaRead::lua_read_index(&self.context,-1);
+            ffi::lua_pop(self.context.l,2);
+        }
+        result
+    }
+
+    fn set<K: LuaWrite,V: LuaWrite>(&mut self,key: K,value: V) {
+        unsafe {
+            self.write_self();
+            LuaWrite::lua_write(&self.context,key);
+            LuaWrite::lua_write(&self.context,value);
+            ffi::lua_settable(self.context.l,-3);
+            ffi::lua_pop(self.context.l,1);
+        }
+    }
+}
+
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum LuaValue {

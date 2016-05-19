@@ -1,7 +1,7 @@
 extern crate yuna;
 extern crate lua52_sys as ffi;
 
-use yuna::{Table,LuaContext,LuaRead,LuaWrite};
+use yuna::{Table,LuaContext,LuaRead,LuaWrite, LuaIndex};
 
 
 #[test]
@@ -14,7 +14,7 @@ fn read_and_write_table() {
     let t : Table = LuaRead::lua_read_index(&context,-1).unwrap();
 
     // Push Table via LuaWrite
-    unsafe { LuaWrite::lua_write(&context,t) };
+    unsafe { LuaWrite::lua_write(&context,&t) };
 
     // Compare created table with pushed table
     let comp = unsafe { ffi::lua_compare(context.l,-2,-1,ffi::LUA_OPEQ) };
@@ -30,10 +30,24 @@ fn new_table() {
     let t : Table = Table::new(&context);
 
     // Push Table
-    unsafe { LuaWrite::lua_write(&context,t) };
+    unsafe { LuaWrite::lua_write(&context,&t) };
 
     // Check if pushed table is really a table
     let is_table = unsafe { ffi::lua_istable(context.l,-1 ) };
     assert!( is_table );
 
+}
+
+#[test]
+fn lua_index_table() {
+    let context = LuaContext::new();
+    let mut table = Table::new(&context);
+
+    table.set("answer",42);
+
+    let readanswer : i32 = table.read("answer").unwrap();
+    assert_eq!(readanswer,42);
+
+    let getanswer = table.get("answer");
+    assert_eq!(getanswer,yuna::LuaValue::LuaNumber(42.0));
 }
