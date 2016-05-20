@@ -39,6 +39,40 @@ fn new_table() {
 }
 
 #[test]
+fn clone_table() {
+    let context = LuaContext::new();
+
+    // Create and clone table
+    let table : Table = Table::new(&context);
+    let clone = table.clone();
+
+    // Push both tables
+    unsafe { LuaWrite::lua_write(&context,&table) };
+    unsafe { LuaWrite::lua_write(&context,&clone) };
+
+    // Compare created table with cloned table
+    let comp = unsafe { ffi::lua_compare(context.l,-2,-1,ffi::LUA_OPEQ) };
+    assert!( comp == 1 );
+
+}
+
+#[test]
+fn compare_table() {
+    let context = LuaContext::new();
+
+    let table : Table = Table::new(&context);
+    let same = table.clone();
+    let notsame = Table::new(&context);
+
+    assert!(table.eq(&same));
+
+    // Compare created table with cloned table
+    let comp = unsafe { ffi::lua_compare(context.l,-2,-1,ffi::LUA_OPEQ) };
+    assert!( comp == 1 );
+
+}
+
+#[test]
 fn lua_index_table() {
     let context = LuaContext::new();
     let mut table = Table::new(&context);

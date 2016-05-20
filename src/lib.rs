@@ -175,6 +175,27 @@ impl LuaIndex for Table {
     }
 }
 
+//TODO: find a way to implement these generally for LuaRef
+impl Clone for Table {
+    fn clone(&self) -> Self {
+        unsafe {
+            self.write_self();
+            Self::ref_from_stack(&self.context)
+        }
+    }
+}
+
+impl PartialEq for Table {
+    fn eq(&self, other: &Table) -> bool {
+        // Push both references
+        unsafe { LuaWrite::lua_write(&self.context,self) };
+        unsafe { LuaWrite::lua_write(&self.context,other) };
+
+        // Compare both references on the stack lua_compare
+        let comp = unsafe { ffi::lua_compare(self.context.l,-2,-1,ffi::LUA_OPEQ) };
+        comp == 1
+    }
+}
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum LuaValue {
