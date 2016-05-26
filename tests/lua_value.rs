@@ -74,6 +74,11 @@ fn read_luavalue() {
     unsafe { LuaWrite::lua_write(&context, 68.3) };
     let valn : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
     assert_eq!(valn,LuaValue::LuaNumber(68.3));
+
+    unsafe { ffi::lua_newtable(context.l) };
+    let valt : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    let table : yuna::Table = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(valt,LuaValue::LuaTable(table));
 }
 
 #[test]
@@ -96,4 +101,9 @@ fn write_luavalue() {
     unsafe { LuaWrite::lua_write(&context,strval.clone()) };
     let strread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
     assert_eq!(strval,strread);
+
+    let t = yuna::Table::new(&context);
+    unsafe { LuaWrite::lua_write(&context,LuaValue::LuaTable(t.clone())) };
+    let tableread : LuaValue = LuaRead::lua_read_index(&context,-1).unwrap();
+    assert_eq!(LuaValue::LuaTable(t),tableread);
 }

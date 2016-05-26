@@ -127,6 +127,13 @@ pub struct Table {
     refindex: libc::c_int,
 }
 
+//TODO: proper implementation
+impl std::fmt::Debug for Table {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Table {{ {} }}", self.refindex)
+    }
+}
+
 impl Table {
     pub fn new(context: &LuaContext) -> Self {
         unsafe { ffi::lua_newtable(context.l) };
@@ -202,6 +209,7 @@ pub enum LuaValue {
     LuaBoolean(bool),
     LuaNumber(f64),
     LuaString(String),
+    LuaTable(Table),
     Nil
 }
 
@@ -226,7 +234,7 @@ impl LuaRead for LuaValue {
             ffi::LUA_TBOOLEAN  => LuaValue::LuaBoolean(LuaRead::lua_read_index(context,index).unwrap()),
             ffi::LUA_TNUMBER   => LuaValue::LuaNumber(LuaRead::lua_read_index(context,index).unwrap()),
             ffi::LUA_TSTRING   => LuaValue::LuaString(LuaRead::lua_read_index(context,index).unwrap()),
-            ffi::LUA_TTABLE    => unimplemented!(),
+            ffi::LUA_TTABLE    => LuaValue::LuaTable(LuaRead::lua_read_index(context,index).unwrap()),
             ffi::LUA_TFUNCTION => unimplemented!(),
             ffi::LUA_TUSERDATA => unimplemented!(),
             ffi::LUA_TNIL      => LuaValue::Nil,
@@ -241,6 +249,7 @@ impl LuaWrite for LuaValue {
             LuaValue::LuaBoolean(b) => LuaWrite::lua_write(context,b),
             LuaValue::LuaNumber(n)  => LuaWrite::lua_write(context,n),
             LuaValue::LuaString(st) => LuaWrite::lua_write(context,st.as_str()),
+            LuaValue::LuaTable(t)   => LuaWrite::lua_write(context,&t),
             LuaValue::Nil           => ffi::lua_pushnil(context.l),
         }
     }
