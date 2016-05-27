@@ -9,6 +9,24 @@ fn create_and_drop_state() {
 }
 
 #[test]
+fn initial_state_without_libs() {
+    let state = yuna::State::new();
+
+    let tablelib = state.get("table");
+    assert_eq!(tablelib,yuna::LuaValue::Nil);
+}
+
+#[test]
+fn state_openlibs() {
+    let mut state = yuna::State::new();
+
+    state.openlibs();
+
+    let tablelib = state.get("table");
+    assert!(tablelib != yuna::LuaValue::Nil);
+}
+
+#[test]
 fn lua_index_state() {
     let mut state = yuna::State::new();
 

@@ -43,11 +43,8 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         let context = LuaContext::new();
-        unsafe {
-            ffi::luaL_openlibs(context.l);
-        }
 
-        return State { context: context };
+        State { context: context }
     }
 
     pub fn do_string<S: AsRef<str>>(&self,code: S) {
@@ -55,6 +52,10 @@ impl State {
         unsafe {
             lauxlib::luaL_dostring(self.context.l,cstr);
         }
+    }
+
+    pub fn openlibs(&mut self) {
+        unsafe { ffi::luaL_openlibs(self.context.l); } 
     }
 
 }
