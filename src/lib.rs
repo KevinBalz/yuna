@@ -55,9 +55,16 @@ impl State {
     }
 
     pub fn openlibs(&mut self) {
-        unsafe { ffi::luaL_openlibs(self.context.l); } 
+        unsafe { ffi::luaL_openlibs(self.context.l); }
     }
 
+    pub fn global(&self) -> Table {
+        unsafe {
+            ffi::lua_pushglobaltable(self.context.l);
+            Table::ref_from_stack(&self.context)
+        }
+
+    }
 }
 
 impl LuaIndex for State {

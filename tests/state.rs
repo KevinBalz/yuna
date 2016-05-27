@@ -50,3 +50,14 @@ fn state_do_string() {
 
     assert_eq!(num,r);
 }
+
+#[test]
+fn state_global() {
+    let mut state = yuna::State::new();
+
+
+    let global : yuna::Table = state.global();
+    state.set("answer",42 as i32);
+
+    assert_eq!(global.get("answer"),state.get("answer"));
+}
