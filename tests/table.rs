@@ -65,11 +65,7 @@ fn compare_table() {
     let notsame = Table::new(&context);
 
     assert!(table.eq(&same));
-
-    // Compare created table with cloned table
-    let comp = unsafe { ffi::lua_compare(context.l,-2,-1,ffi::LUA_OPEQ) };
-    assert!( comp == 1 );
-
+    assert!(table.ne(&notsame));
 }
 
 #[test]

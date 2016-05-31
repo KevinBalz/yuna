@@ -2,7 +2,7 @@ extern crate yuna;
 extern crate lua52_sys as ffi;
 
 use yuna::{LuaRead,LuaWrite};
-use std::ffi::{CString, CStr};
+use std::ffi::CString;
 
 #[test]
 fn read_bool() {

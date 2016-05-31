@@ -5,7 +5,9 @@ mod lauxlib;
 
 use std::cell::Cell;
 
+/// Holds the raw `lua_State`.
 pub struct LuaContext {
+    /// The raw lua state
     pub l: *mut ffi::lua_State,
     refcount: Cell<usize>
 }
@@ -35,29 +37,43 @@ impl Drop for LuaContext {
     }
 }
 
-
+/// Holds the Lua State and provides functions for interacting with the Lua environment.
 pub struct State {
     context: LuaContext,
 }
 
 impl State {
+
+    /// Creates a new State.
     pub fn new() -> Self {
         let context = LuaContext::new();
 
         State { context: context }
     }
 
-    pub fn do_string<S: AsRef<str>>(&self,code: S) {
+    /// Loads and runs the given string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut state = yuna::State::new();
+    /// state.openlibs();
+    ///
+    /// state.do_string("print(\"yuna rocks!\")"); // prints "yuna rocks!"
+    /// ```
+    pub fn do_string<S: AsRef<str>>(&mut self,code: S) {
         let cstr = std::ffi::CString::new(code.as_ref()).unwrap().as_ptr();
         unsafe {
             lauxlib::luaL_dostring(self.context.l,cstr);
         }
     }
 
+    /// Opens all standard Lua libraries.
     pub fn openlibs(&mut self) {
         unsafe { ffi::luaL_openlibs(self.context.l); }
     }
 
+    /// Returns the global Table.
     pub fn global(&self) -> Table {
         unsafe {
             ffi::lua_pushglobaltable(self.context.l);
@@ -91,6 +107,7 @@ impl LuaIndex for State {
     }
 }
 
+/// Trait for Objects which are reference values in lua. (e.g. table,function...).
 pub trait LuaRef : Sized {
     fn get_context(&self) -> &LuaContext;
     fn get_refindex(&self) -> libc::c_int;
@@ -130,6 +147,7 @@ impl<'a,T: LuaRef> LuaWrite for &'a T {
 }
 
 
+/// Holds a reference to a lua table.
 pub struct Table {
     context: LuaContext,
     refindex: libc::c_int,
@@ -143,6 +161,8 @@ impl std::fmt::Debug for Table {
 }
 
 impl Table {
+
+    /// Creates a new Table and returns a reference to it.
     pub fn new(context: &LuaContext) -> Self {
         unsafe { ffi::lua_newtable(context.l) };
         let t = LuaRead::lua_read_index(context,-1).unwrap();
@@ -212,6 +232,7 @@ impl PartialEq for Table {
     }
 }
 
+/// A Enum which can represent every possible type in Lua.
 #[derive(Debug,Clone,PartialEq)]
 pub enum LuaValue {
     LuaBoolean(bool),
@@ -222,14 +243,18 @@ pub enum LuaValue {
 }
 
 impl LuaValue {
+
+    /// Creates a `LuaValue` from a `boolean`
     pub fn from_bool(b: bool) -> Self {
         LuaValue::LuaBoolean(b)
     }
 
+    /// Creates a `LuaValue` from any number
     pub fn from_number<N: Into<f64>>(number: N) -> Self {
         LuaValue::LuaNumber(number.into())
     }
 
+    /// Creates a `LuaValue` from a string
     pub fn from_string<S: Into<String>>(s: S) -> Self {
         LuaValue::LuaString(s.into())
     }
@@ -263,10 +288,12 @@ impl LuaWrite for LuaValue {
     }
 }
 
+/// A Trait which represent types which can be read from the lua context
 pub trait LuaRead: Sized {
     fn lua_read_index(context: &LuaContext,index: i32) -> Result<Self,()>;
 }
 
+/// A Trait which represent types which can be pushed to the lua context
 pub trait LuaWrite {
     unsafe fn lua_write(context: &LuaContext,value: Self);
 }
@@ -374,7 +401,7 @@ macro_rules! impl_float(
 impl_float!(f32);
 impl_float!(f64);
 
-
+/// A trait which represents objects which can be indexed like e.g. a lua table.
 pub trait LuaIndex {
     fn read<K: LuaWrite,V: LuaRead>(&self,key: K) -> Result<V,()>;
     fn set<K: LuaWrite,V: LuaWrite>(&mut self,key: K,value: V);
